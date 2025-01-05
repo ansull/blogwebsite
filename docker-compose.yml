@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: blog_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"  # Changed from ${DB_PORT}:5432
+    networks:
+      - blog_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.user
+    container_name: blog_user_service
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=5432  # This remains 5432 as it's internal to Docker network
+      - JWT_SECRET=${JWT_SECRET}
+      - USER_PORT=3000
+    ports:
+      - "${USER_PORT}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - blog_network
+    restart: unless-stopped
+
+  blog_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.blog
+    container_name: blog_blog_service
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres  # Changed from localhost
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=5432
+      - JWT_SECRET=${JWT_SECRET}
+      - BLOG_PORT=3001
+    ports:
+      - "${BLOG_PORT}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - blog_network
+    restart: unless-stopped
+
+  comment_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.comment
+    container_name: blog_comment_service
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres  # Changed from localhost
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=5432
+      - JWT_SECRET=${JWT_SECRET}
+      - COMMENT_PORT=3002
+    ports:
+      - "${COMMENT_PORT}:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - blog_network
+    restart: unless-stopped
+
+networks:
+  blog_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

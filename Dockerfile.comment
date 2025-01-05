@@ -1,0 +1,19 @@
+
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY config ./config
+COPY controllers/commentController.js ./controllers/
+COPY middleware ./middleware
+COPY routes/commentRoutes.js ./routes/
+COPY commentServer.js .
+
+ENV NODE_ENV=production
+EXPOSE 3002
+CMD ["node", "commentServer.js"]
