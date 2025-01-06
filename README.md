@@ -44,7 +44,7 @@ The project is divided into three microservices:
 
     ```sh
     git clone https://github.com/yourusername/blog-platform.git
-    cd blog-platform
+    cd blogplatform
     ```
 
 2. Create a `.env` file in the root directory and add the following environment variables:
@@ -55,30 +55,24 @@ The project is divided into three microservices:
     DB_PASSWORD=yourpassword
     DB_HOST=yourdbhost
     DB_PORT=5432
-    DB_NAME=blog_db
+    DB_NAME=blogdb
     JWT_SECRET=yourjwtsecret
 
-    USER_PORT=80
+    USER_PORT=3000
     BLOG_PORT=3001
     COMMENT_PORT=3002
     ```
 
-3. Install dependencies:
+3. Build the images:
 
     ```sh
-    npm install
+    docker-compose build
     ```
 
-4. Initialize the database:
+4. Run the services:
 
     ```sh
-    docker-compose up -d postgres
-    ```
-
-5. Run the services:
-
-    ```sh
-    npm run start-all
+    docker-compose up
     ```
 
 ## Usage
